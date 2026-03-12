@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ food.name }} - Beyond The Bite{% endblock %}
+
+{% block content %}
+<style>
+    /* Custom styles for the reference UI */
+    body {
+        background-color: #FFF9F0; /* Light cream background */
+        color: #333;
+    }
+    .text-brand { color: #F59E0B; }
+    .bg-brand { background-color: #F59E0B; }
+    
+    /* The tall yellow header overlapping style */
+    .hero-header {
+        background: linear-gradient(180deg, #F59E0B 0%, #FBBF24 100%);
+        border-radius: 0 0 3rem 3rem;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 45vh;
+        z-index: 0;
+    }
+    
+    .food-image-container {
+        position: relative;
+        z-index: 10;
+        /* Pull image up over the yellow header */
+        margin-top: -15vh;
+    }
+    
+    .main-content-card {
+        background-color: white;
+        border-radius: 3rem 3rem 0 0;
+        position: relative;
+        z-index: 5;
+        /* Pull the card up to overlap the yellow header area slightly */
+        margin-top: -5vh;
+        padding-top: 5vh;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.05);
+    }
+
+    .nutrition-pill {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        width: max-content;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        color: white;
+    }
+</style>
+
+<!-- Full width yellow header background -->
+<div class="hero-header w-full absolute top-0 left-0 right-0"></div>
+
+<div class="min-h-screen pb-24 pt-20 relative max-w-md mx-auto sm:max-w-2xl lg:max-w-4xl px-4 lg:px-8">
+    
+    <!-- Top Navigation Area overlaying the yellow header -->
+    <div class="flex justify-between items-center mb-8 relative z-20">
+        <button onclick="history.back()" class="w-10 h-10 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden border-2 border-white/50">
+            {% if user.is_authenticated %}
+                <span class="font-bold text-brand">{{ user.username.0|upper }}</span>
+            {% else %}
+                <i class="fas fa-user text-brand"></i>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Image and Nutrition Pills Area -->
+    <div class="flex flex-col-reverse sm:flex-row items-center justify-between food-image-container mb-8 sm:mb-4">
+        <!-- Nutrition grid on mobile, stacked on left for desktop -->
+        <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-col z-20 w-full sm:w-auto mt-6 sm:mt-0">
+            <div class="nutrition-pill w-full sm:w-max mx-auto sm:mx-0 sm:mb-4 mb-0">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-brand mr-3 shadow-sm shrink-0">
+                    <i class="fas fa-fire-alt"></i>
+                </div>
+                <div>
+                    <div class="text-xs opacity-90 font-medium">Calories</div>
+                    <div class="font-bold">{{ food.nutrition.calories }}</div>
+                </div>
+            </div>
+            <div class="nutrition-pill w-full sm:w-max mx-auto sm:mx-0 sm:mb-4 mb-0">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-green-500 mr-3 shadow-sm shrink-0">
+                    <i class="fas fa-dumbbell"></i>
+                </div>
+                <div>
+                    <div class="text-xs opacity-90 font-medium">Protein</div>
+                    <div class="font-bold">{{ food.nutrition.protein }}g</div>
+                </div>
+            </div>
+            <div class="nutrition-pill w-full sm:w-max mx-auto sm:mx-0 sm:mb-4 mb-0">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-yellow-400 mr-3 shadow-sm shrink-0">
+                    <i class="fas fa-cheese"></i>
+                </div>
+                <div>
+                    <div class="text-xs opacity-90 font-medium">Fat</div>
+                    <div class="font-bold">{{ food.nutrition.fat }}g</div>
+                </div>
+            </div>
+             <div class="nutrition-pill w-full sm:w-max mx-auto sm:mx-0 sm:mb-0 mb-0">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-orange-400 mr-3 shadow-sm shrink-0">
+                    <i class="fas fa-bread-slice"></i>
+                </div>
+                <div>
+                    <div class="text-xs opacity-90 font-medium">Carbs</div>
+                    <div class="font-bold">{{ food.nutrition.carbohydrates }}g</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- The glorious food image -->
+        <div class="relative w-48 h-48 sm:w-64 sm:h-64 lg:w-80 lg:h-80 sm:-ml-20 rounded-full overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-[6px] border-white z-10 flex-shrink-0 bg-white flex items-center justify-center">
+            {% if food.image %}
+                <img src="{{ food.image.url }}" alt="{{ food.name }}" class="w-full h-full object-cover">
+            {% else %}
+                <img src="https://source.unsplash.com/800x800/?{{ food.name|urlencode }},food" alt="{{ food.name }}" class="w-full h-full object-cover">
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main White Content Card -->
+    <div class="main-content-card px-6 pb-12 sm:px-10">
+        
+        <div class="flex justify-between items-start mb-2">
+            <h1 class="text-3xl font-bold text-gray-800">{{ food.name }}</h1>
+            
+            {% if user.is_authenticated %}
+            <form id="favorite-form" method="post" action="{% url 'toggle_favorite' food.id %}" class="shrink-0">
+                {% csrf_token %}
+                <button type="submit" id="favorite-btn" class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center hover:bg-red-100 transition shadow-sm">
+                    <i class="fas fa-heart text-xl" id="favorite-icon"></i>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        
+        <p class="text-gray-500 mb-8">{{ food.description }}</p>
+
+        <!-- Serving Size Dropdown (Mock/Visual only for now) -->
+        <div class="mb-8">
+            <h3 class="font-bold text-lg text-gray-800 mb-3">Serving size</h3>
+            <div class="flex items-center space-x-4">
+                <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-semibold text-gray-700">
+                    2 kg
+                </div>
+                <div class="flex-grow bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition">
+                    <span class="text-gray-600 font-medium">Serving for - 8 People</span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Used Ingredients Section -->
+        <div class="mb-8">
+            <h3 class="font-bold text-lg text-gray-800 mb-4">Used Ingredients</h3>
+            <div class="space-y-4">
+                {% if food.ingredients.all %}
+                    {% for ingredient in food.ingredients.all %}
+                    <div class="flex items-center p-3 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition">
+                        <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-500 mr-4 shrink-0">
+                            <i class="fas fa-leaf text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-800">{{ ingredient.name }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Mock ingredients display when DB is empty -->
+                    {% with mock_ingredients="Main Ingredient,Spices,Oil or Butter,Salt & Pepper" %}
+                        {% for ingredient in mock_ingredients.split %}
+                        <div class="flex items-center p-3 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition">
+                            <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-500 mr-4 shrink-0">
+                                <i class="fas fa-leaf text-lg"></i>
+                            </div>
+                            <div>
+                                <span class="font-semibold text-gray-800">{{ ingredient|title }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endwith %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recipe & Preparation -->
+        <div class="mb-8">
+            <h3 class="font-bold text-lg text-gray-800 mb-4">Preparation Steps</h3>
+            <div class="space-y-6">
+                {% for step in dynamic_prep_steps %}
+                <div class="flex items-start">
+                    <div class="w-12 h-12 rounded-xl border border-yellow-200 bg-yellow-50 text-brand flex items-center justify-center mr-4 shrink-0 font-bold">
+                        {{ forloop.counter }}
+                    </div>
+                    <p class="text-gray-600 leading-relaxed pt-1 flex-1">
+                        {{ step }}
+                    </p>
+                </div>
+                {% empty %}
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
+                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
+                        <i class="fas fa-book-open text-2xl"></i>
+                    </div>
+                    <p class="text-gray-500">Full preparation method is unavailable for this item.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Health Benefits -->
+        <div class="mb-8 mt-10">
+            <h3 class="font-bold text-lg text-gray-800 mb-4">Health Perks</h3>
+            <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-start">
+                <i class="fas fa-heartbeat text-blue-500 text-xl mr-4 mt-1"></i>
+                <p class="text-gray-700 leading-relaxed">{{ food.nutrition.health_benefits }}</p>
+            </div>
+        </div>
+
+        <!-- Reviews & Rating Section -->
+        <div class="mt-12 pt-8 border-t border-gray-100">
+            <h3 class="font-bold text-xl text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-star text-brand mr-2"></i> Reviews
+            </h3>
+            
+            {% if user.is_authenticated %}
+            <!-- Rating Form -->
+             <form id="rate-form" method="post" action="{% url 'rate_food' food.id %}" class="flex items-center space-x-3 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                {% csrf_token %}
+                <span class="font-medium text-gray-700">Your Rating:</span>
+                <select name="rating" class="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand">
+                    <option value="1">1 ⭐</option>
+                    <option value="2">2 ⭐</option>
+                    <option value="3">3 ⭐</option>
+                    <option value="4">4 ⭐</option>
+                    <option value="5" selected>5 ⭐</option>
+                </select>
+                <button type="submit" id="rate-btn" class="bg-brand text-white px-5 py-2 rounded-xl font-bold hover:bg-yellow-600 transition shadow-md">
+                    <i class="fas fa-paper-plane mr-1" id="rate-icon"></i> <span id="rate-text">Submit</span>
+                </button>
+            </form>
+
+            <form method="post" action="{% url 'review_food' food.id %}" class="mb-10">
+                {% csrf_token %}
+                <textarea name="comment" rows="3" class="w-full bg-white border border-gray-200 rounded-2xl p-4 text-gray-700 resize-none focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all" placeholder="Write a review..."></textarea>
+                <button type="submit" class="mt-3 bg-gray-800 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-black transition">
+                    Post Review
+                </button>
+            </form>
+            {% endif %}
+
+            <div class="space-y-5">
+                {% for review in reviews %}
+                    <div class="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="font-bold text-gray-800 flex items-center">
+                                <span class="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center mr-2 text-xs">
+                                    {{ review.user.username.0|upper }}
+                                </span>
+                                {{ review.user.username }}
+                            </span>
+                            <span class="text-xs text-gray-400 font-medium">{{ review.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        <p class="text-gray-600 leading-relaxed">{{ review.comment }}</p>
+                    </div>
+                {% empty %}
+                    <div class="text-center text-gray-500 py-6">
+                        <i class="far fa-comment-dots text-4xl mb-3 opacity-50"></i>
+                        <p>No reviews yet. Be the first!</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Handling rating submission
+    const rateForm = document.getElementById('rate-form');
+    if (rateForm) {
+        rateForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('rate-btn');
+            const icon = document.getElementById('rate-icon');
+            const text = document.getElementById('rate-text');
+            const originalIcon = icon.className;
+            const originalText = text.innerText;
+
+            icon.className = 'fas fa-spinner fa-spin mr-1';
+            text.innerText = 'Sending...';
+            btn.disabled = true;
+
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    icon.className = 'fas fa-check mr-1';
+                    text.innerText = 'Rated!';
+                    setTimeout(() => {
+                        icon.className = originalIcon;
+                        text.innerText = originalText;
+                    }, 2000);
+                }
+            })
+            .catch(err => console.error(err))
+            .finally(() => btn.disabled = false);
+        });
+    }
+
+    // Handling favorite toggle
+    const favoriteForm = document.getElementById('favorite-form');
+    if (favoriteForm) {
+        favoriteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('favorite-btn');
+            const icon = document.getElementById('favorite-icon');
+            const originalClass = icon.className;
+            
+            // Temporary loading visual
+            icon.className = 'fas fa-spinner fa-spin text-xl';
+            btn.disabled = true;
+
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'added') {
+                    icon.className = 'fas fa-heart text-xl text-red-500'; // Filled heart
+                    btn.classList.add('bg-red-50');
+                    btn.classList.remove('bg-gray-50');
+                } else if (data.status === 'removed') {
+                    icon.className = 'far fa-heart text-xl text-gray-400'; // Outline heart
+                    btn.classList.remove('bg-red-50');
+                    btn.classList.add('bg-gray-50');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                icon.className = originalClass;
+            })
+            .finally(() => btn.disabled = false);
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Beyond The Bite{% endblock %}
+
+{% block content %}
+<div class="min-h-screen food-bg-pattern py-12">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="text-center mb-16 relative">
+            <h1 class="font-accent text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00f2fe] to-[#4facfe] mb-4 animate-fade-in tracking-wider">
+                Welcome back, {{ user.username }}!
+            </h1>
+            <p class="text-xl text-gray-300 animate-slide-up font-light">Here's your culinary activity overview</p>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-8 mb-16">
+            <div class="card-3d figma-card bg-gradient-to-br from-[#84fab0] to-[#8fd3f4] text-white p-8 rounded-[2rem] shadow-xl border-none">
+                <div class="flex items-center">
+                    <div class="bg-white bg-opacity-30 p-4 rounded-2xl mr-4 shadow-sm">
+                        <i class="fas fa-search text-3xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-emerald-50 text-sm font-semibold uppercase tracking-wider mb-1">Total Scans</p>
+                        <p class="text-4xl font-extrabold">{{ scan_count }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-3d figma-card bg-gradient-to-br from-[#f6d365] to-[#fda085] text-white p-8 rounded-[2rem] shadow-xl border-none">
+                <div class="flex items-center">
+                    <div class="bg-white bg-opacity-30 p-4 rounded-2xl mr-4 shadow-sm">
+                        <i class="fas fa-utensils text-3xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-orange-50 text-sm font-semibold uppercase tracking-wider mb-1">Saved Recipes</p>
+                        <p class="text-4xl font-extrabold">{{ recipe_count }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-3d figma-card bg-gradient-to-br from-[#FF9A9E] to-[#FECFEF] text-white p-8 rounded-[2rem] shadow-xl border-none">
+                <div class="flex items-center">
+                    <div class="bg-white bg-opacity-30 p-4 rounded-2xl mr-4 shadow-sm">
+                        <i class="fas fa-star text-3xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-pink-50 text-sm font-semibold uppercase tracking-wider mb-1">Ratings Given</p>
+                        <p class="text-4xl font-extrabold text-pink-700">{{ rating_count }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-3d figma-card bg-gradient-to-br from-[#fa709a] to-[#fee140] text-white p-8 rounded-[2rem] shadow-xl border-none">
+                <div class="flex items-center">
+                    <div class="bg-white bg-opacity-30 p-4 rounded-2xl mr-4 shadow-sm">
+                        <i class="fas fa-heart text-3xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-yellow-50 text-sm font-semibold uppercase tracking-wider mb-1">Favorite Foods</p>
+                        <p class="text-4xl font-extrabold">{{ favorite_count }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+        <div class="card-3d figma-card rounded-[2rem] p-8">
+            <h2 class="text-2xl font-semibold text-white mb-6 flex items-center">
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-500 p-2 rounded-lg mr-3">
+                    <i class="fas fa-history text-white"></i>
+                </div>
+                Recent Scans
+            </h2>
+            {% if recent_scans %}
+                <div class="space-y-4">
+                    {% for scan in recent_scans %}
+                        <div class="flex items-center space-x-4 p-4 rounded-xl hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/10">
+                            {% if scan.image %}
+                                <img src="{{ scan.image.url }}" alt="Scanned food" class="w-16 h-16 object-cover rounded-xl shadow-lg border border-gray-700">
+                            {% else %}
+                                <div class="w-16 h-16 bg-gray-800 rounded-xl flex items-center justify-center shadow-lg border border-gray-700">
+                                    <i class="fas fa-image text-gray-500"></i>
+                                </div>
+                            {% endif %}
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-white text-lg">
+                                    {% if scan.food_detected %}
+                                        {{ scan.food_detected.name }}
+                                    {% else %}
+                                        Unknown Food
+                                    {% endif %}
+                                </h3>
+                                <p class="text-sm text-gray-400 mb-2">{{ scan.scanned_at|date:"M d, Y H:i" }}</p>
+                                <span class="inline-block bg-gradient-to-r from-green-400 to-emerald-500 text-gray-900 px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                                    {{ scan.confidence|floatformat:1 }}% confidence
+                                </span>
+                            </div>
+                            {% if scan.food_detected %}
+                                <a href="{% url 'food_detail' scan.food_detected.id %}" class="btn-3d bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-2 rounded-full hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-6">
+                    <a href="{% url 'history' %}" class="text-[#00f2fe] hover:text-[#4facfe] font-semibold flex items-center">
+                        View All History <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            {% else %}
+                <p class="text-gray-400">No scans yet. <a href="{% url 'scan' %}" class="text-[#00f2fe] font-semibold">Start scanning!</a></p>
+            {% endif %}
+        </div>
+
+        <div class="card-3d figma-card rounded-[2rem] p-8">
+            <h2 class="text-2xl font-semibold text-white mb-6 flex items-center">
+                <div class="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg mr-3">
+                    <i class="fas fa-chart-pie text-white"></i>
+                </div>
+                Nutrition Overview
+            </h2>
+            <div class="chart-container">
+                <canvas id="nutritionChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('nutritionChart');
+    if (ctx && typeof Chart !== 'undefined') {
+        const context = ctx.getContext('2d');
+        try {
+            const nutritionData = JSON.parse('{{ nutrition_data|escapejs }}');
+
+            if (window.myNutritionChart) {
+                window.myNutritionChart.destroy();
+            }
+
+            window.myNutritionChart = new Chart(context, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Protein', 'Carbohydrates', 'Fat'],
+                    datasets: [{
+                        data: [nutritionData.protein || 0, nutritionData.carbs || 0, nutritionData.fat || 0],
+                        backgroundColor: [
+                            '#3B82F6',
+                            '#10B981',
+                            '#F59E0B'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading nutrition chart:', error);
+            showChartFallback(ctx);
+        }
+    } else if (ctx) {
+        showChartFallback(ctx);
+    }
+});
+
+function showChartFallback(ctx) {
+    ctx.style.display = 'none';
+    const container = ctx.parentElement;
+    const message = document.createElement('p');
+    message.textContent = 'Nutrition chart unavailable';
+    message.className = 'text-gray-500 text-center py-8';
+    container.appendChild(message);
+}
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Beyond The Bite{% endblock %}
+
+{% block content %}
+<div class="min-h-screen food-bg-pattern flex items-center justify-center py-12 px-4">
+    <div class="max-w-md w-full">
+        <div class="card-3d figma-card border-none rounded-[2rem] p-10 max-w-md w-full relative z-10">
+            <div class="text-center mb-8">
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-500 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <i class="fas fa-sign-in-alt text-white text-3xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold gradient-text">Welcome Back</h1>
+                <p class="text-gray-400 mt-2">Sign in to your Beyond The Bite account</p>
+            </div>
+
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                <div>
+                    <label for="id_username" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                    <input type="text" name="username" id="id_username" required
+                           class="card-3d figma-card w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 transition-all duration-300">
+                </div>
+                <div>
+                    <label for="id_password" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                    <input type="password" name="password" id="id_password" required
+                           class="card-3d figma-card w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 transition-all duration-300">
+                </div>
+                <button type="submit" class="btn-3d w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-2xl">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                </button>
+            </form>
+
+            <div class="mt-8 text-center">
+                <p class="text-gray-600 dark:text-gray-300">Don't have an account?
+                    <a href="{% url 'register' %}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold transition-colors duration-300">Create one here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

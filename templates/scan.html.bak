@@ -1,0 +1,236 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scan Food - Beyond The Bite{% endblock %}
+
+{% block content %}
+<div class="min-h-screen food-bg-pattern py-12">
+    <div class="max-w-4xl mx-auto px-4">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold gradient-text mb-4 animate-fade-in text-[#00f2fe]">
+                <i class="fas fa-camera text-[#fa709a] mr-2"></i>Scan Your Food
+            </h1>
+            <p class="text-xl text-gray-300 animate-slide-up">Upload images of your food and let our AI identify them instantly!</p>
+        </div>
+
+        <div class="card-3d figma-card p-8 rounded-[2rem] shadow-2xl max-w-2xl mx-auto border-none">
+            <form id="upload-form" enctype="multipart/form-data" class="space-y-6" action="{% url 'scan_food' %}" method="post">
+                {% csrf_token %}
+                <div class="upload-area border-4 border-dashed border-gray-600 rounded-[2rem] p-12 text-center transition-all duration-300 hover:border-[#00f2fe] bg-white/5">
+                    <div class="upload-icon mb-4">
+                        <i class="fas fa-cloud-upload-alt text-6xl text-gray-400"></i>
+                    </div>
+                    <div class="space-y-4">
+                        <div id="image-preview" class="hidden grid grid-cols-2 md:grid-cols-3 gap-4 mb-4"></div>
+                        <input type="file" id="id_images" name="images" multiple accept="image/*" class="hidden" required>
+                        <label for="id_images" class="cursor-pointer">
+                            <div class="text-gray-400">
+                                <h3 class="text-xl font-semibold text-gray-200 mb-2">Drop your food images here</h3>
+                                <p class="text-lg mb-2">or click to browse files</p>
+                                <p class="text-sm">PNG, JPG, GIF up to 10MB each</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" id="scan-btn" onclick="document.getElementById('upload-form').submit();" class="btn-3d bg-gradient-to-r from-green-600 to-blue-600 text-white px-10 py-4 rounded-full font-semibold text-lg hover:from-green-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-search mr-2"></i>Scan Food
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="loading" class="hidden text-center py-8">
+            <div class="loading-spinner bg-gradient-to-r from-[#00f2fe] to-[#4facfe] mx-auto mb-4"></div>
+            <p class="text-lg text-gray-300">Analyzing your food images...</p>
+        </div>
+
+        <div id="results" class="hidden space-y-6 mt-12">
+            <h2 class="text-3xl font-bold text-center gradient-text mb-8">Scan Results</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    console.log('scan page script initializing');
+    const form = document.getElementById('upload-form');
+    if (!form) {
+        console.error('upload-form not found');
+        return;
+    }
+    const imageInput = document.getElementById('id_images');
+    const imagePreview = document.getElementById('image-preview');
+    const scanBtn = document.getElementById('scan-btn');
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+
+    let selectedFiles = [];
+    scanBtn.disabled = true;  // start disabled until user picks images
+
+    // give extra logging on click
+    scanBtn.addEventListener('click', function() {
+        console.log('scan button clicked');
+    });
+
+    // Drag and drop functionality
+    const dropZone = form.querySelector('.upload-area');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
+    imageInput.addEventListener('change', function(e) {
+        handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+        selectedFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+        previewFiles();
+    }
+
+    function previewFiles() {
+        imagePreview.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onloadend = function() {
+                const img = document.createElement('img');
+                img.src = reader.result;
+                img.className = 'w-full h-32 object-cover rounded-xl card-3d';
+                imagePreview.appendChild(img);
+            };
+        });
+        if (selectedFiles.length > 0) {
+            imagePreview.classList.remove('hidden');
+            scanBtn.disabled = false; // enable button when files selected
+            console.log('files selected, enabling scan button');
+        } else {
+            scanBtn.disabled = true;
+        }
+    }
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (selectedFiles.length === 0) {
+            alert('Please select at least one image.');
+            return;
+        }
+
+        scanBtn.disabled = true;
+        loading.classList.remove('hidden');
+        results.classList.add('hidden');
+
+        const formData = new FormData();
+        selectedFiles.forEach(file => {
+            formData.append('images', file);
+        });
+
+        console.log('sending POST to scan_food');
+        fetch('{% url "scan_food" %}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            loading.classList.add('hidden');
+            results.classList.remove('hidden');
+            displayResults(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loading.classList.add('hidden');
+            alert('An error occurred. Please try again.');
+        })
+        .finally(() => {
+            scanBtn.disabled = false;
+        });
+    });
+
+    function displayResults(data) {
+        const resultsContainer = results.querySelector('.grid');
+        resultsContainer.innerHTML = '';
+        data.forEach(result => {
+            const resultCard = document.createElement('div');
+            resultCard.className = 'card-3d figma-card p-8 rounded-[2rem] shadow-xl border-none';
+            resultCard.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-[#00f2fe]">${result.food_name}</h3>
+                    <span class="bg-gradient-to-r from-[#0ba360] to-[#3cba92] text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                        ${Math.round(result.confidence * 100)}% confidence
+                    </span>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-gray-300 mb-2 flex items-center">
+                            <i class="fas fa-chart-pie text-[#fa709a] mr-2"></i>Nutrition Facts
+                        </h4>
+                        <div class="grid grid-cols-2 flex-wrap gap-4 text-sm mt-4">
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <span class="font-bold text-[#00f2fe] text-lg block mb-1">${result.nutrition.calories} kcal</span>
+                                <p class="text-gray-400 font-medium">Calories</p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <span class="font-bold text-[#43e97b] text-lg block mb-1">${result.nutrition.protein}g</span>
+                                <p class="text-gray-400 font-medium">Protein</p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <span class="font-bold text-[#f6d365] text-lg block mb-1">${result.nutrition.carbohydrates}g</span>
+                                <p class="text-gray-400 font-medium">Carbs</p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <span class="font-bold text-[#fa709a] text-lg block mb-1">${result.nutrition.fat}g</span>
+                                <p class="text-gray-400 font-medium">Fat</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-300 mb-2 mt-6 flex items-center">
+                            <i class="fas fa-heart text-[#fa709a] mr-2"></i>Health Benefits
+                        </h4>
+                        <p class="text-sm text-gray-300 bg-white/5 p-4 rounded-xl border border-white/10">${result.nutrition.health_benefits}</p>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <a href="/food/${result.food_id}/" class="btn-3d bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 w-full text-center block shadow-lg">
+                        <i class="fas fa-eye mr-2"></i>View Full Details
+                    </a>
+                </div>
+            `;
+            resultsContainer.appendChild(resultCard);
+        });
+    }
+})();
+</script>
+{% endblock %}

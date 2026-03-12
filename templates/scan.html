@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scan Food - Beyond The Bite{% endblock %}
+
+{% block content %}
+<style>
+    /* Custom styles for the reference UI */
+    body {
+        background-color: #FFF9F0; /* Light cream background */
+        color: #333;
+    }
+    .text-brand { color: #F59E0B; }
+    .bg-brand { background-color: #F59E0B; }
+    
+    /* Reticle UI */
+    .scanning-overlay {
+        position: relative;
+        overflow: hidden;
+        border-radius: 2rem;
+    }
+    .reticle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 250px;
+        height: 250px;
+        pointer-events: none;
+    }
+    .reticle::before, .reticle::after {
+        content: '';
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border-color: white;
+        border-style: solid;
+    }
+    .reticle::before { top: 0; left: 0; border-width: 4px 0 0 4px; }
+    .reticle::after { bottom: 0; right: 0; border-width: 0 4px 4px 0; }
+    
+    .reticle-inner::before, .reticle-inner::after {
+        content: '';
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border-color: white;
+        border-style: solid;
+    }
+    .reticle-inner::before { top: 0; right: 0; border-width: 4px 4px 0 0; }
+    .reticle-inner::after { bottom: 0; left: 0; border-width: 0 0 4px 4px; }
+
+    .scan-line {
+        position: absolute;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        top: 0;
+        left: 0;
+        animation: scan 2s linear infinite;
+        pointer-events: none;
+    }
+
+    @keyframes scan {
+        0% { top: 0; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+    }
+
+    .pulse-ring {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 2px solid #F59E0B;
+        animation: pulseAnimation 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    @keyframes pulseAnimation {
+        0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+    }
+</style>
+
+<div class="min-h-screen py-8 pb-32">
+    <div class="max-w-4xl mx-auto px-4">
+        
+        <!-- Header area for Scan -->
+        <div class="flex items-center justify-between mb-8" id="scan-header">
+            <h1 class="text-3xl font-bold text-gray-800">
+                Scan Food <span class="text-brand">📸</span>
+            </h1>
+        </div>
+
+        <!-- Scanning Interface Container -->
+        <div id="scan-container" class="relative max-w-md mx-auto">
+            <!-- Upload Area -->
+            <form id="upload-form" enctype="multipart/form-data" action="{% url 'scan_food' %}" method="post">
+                {% csrf_token %}
+                <div id="dropzone" class="scanning-overlay bg-white shadow-xl aspect-[3/4] flex flex-col items-center justify-center border-2 border-dashed border-gray-300 hover:border-yellow-500 transition-colors cursor-pointer relative overflow-hidden">
+                    <div id="upload-prompt" class="text-center z-10 px-6">
+                        <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-camera text-3xl text-brand"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Tap to Scan Food</h3>
+                        <p class="text-gray-500 text-sm">Upload a photo to see nutrition</p>
+                    </div>
+
+                    <input type="file" id="id_images" name="images" multiple accept="image/*" class="hidden" required>
+                    
+                    <!-- Image Preview & Reticle (Hidden initially) -->
+                    <div id="image-preview-container" class="absolute inset-0 hidden bg-black">
+                        <img id="image-preview-img" src="" class="w-full h-full object-cover opacity-70">
+                        
+                        <!-- The target reticle -->
+                        <div id="reticle-ui" class="hidden">
+                            <div class="reticle">
+                                <div class="reticle-inner w-full h-full relative"></div>
+                            </div>
+                            <div class="scan-line"></div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Bottom Scanning Sheet (Hidden initially) -->
+            <div id="scanning-sheet" class="hidden absolute -bottom-12 left-0 right-0 bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-8 text-center animate-slide-up z-20">
+                <div class="relative w-16 h-16 mx-auto mb-4">
+                    <div class="pulse-ring"></div>
+                    <div class="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border border-gray-100">
+                        <i class="fas fa-search text-brand text-xl"></i>
+                    </div>
+                </div>
+                <p class="text-gray-600 font-medium tracking-wide">Searching...</p>
+            </div>
+            
+            <button type="button" id="start-scan-btn" class="hidden w-full mt-6 bg-brand text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl hover:bg-yellow-600 transition-all transform hover:-translate-y-1">
+                Analyze This Food
+            </button>
+        </div>
+
+        <!-- Results View (Hidden initially) -->
+        <div id="results" class="hidden space-y-8 animate-fade-in">
+            <!-- Header matching the Home screen -->
+            <div class="flex items-center justify-between mb-2">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Scan Results</h2>
+                    <p class="text-gray-500 text-sm">Matches found for your photo</p>
+                </div>
+                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center text-brand shadow-sm">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+            </div>
+
+            <!-- Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="results-grid"></div>
+            
+            <div class="text-center mt-8 pt-6">
+                <button onclick="resetScan()" class="text-gray-500 font-medium hover:text-brand transition-colors">
+                    <i class="fas fa-redo mr-2"></i>Scan another item
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Elements
+    const dropzone = document.getElementById('dropzone');
+    const imageInput = document.getElementById('id_images');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const previewContainer = document.getElementById('image-preview-container');
+    const previewImg = document.getElementById('image-preview-img');
+    const reticleUI = document.getElementById('reticle-ui');
+    const scanningSheet = document.getElementById('scanning-sheet');
+    const startScanBtn = document.getElementById('start-scan-btn');
+    const scanContainer = document.getElementById('scan-container');
+    const resultsContainer = document.getElementById('results');
+    const resultsGrid = document.getElementById('results-grid');
+    const scanHeader = document.getElementById('scan-header');
+    
+    let selectedFile = null;
+
+    // Trigger file selection
+    dropzone.addEventListener('click', () => {
+        if (!selectedFile) imageInput.click();
+    });
+
+    imageInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            selectedFile = e.target.files[0];
+            showPreview(selectedFile);
+        }
+    });
+
+    function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            uploadPrompt.classList.add('hidden');
+            previewContainer.classList.remove('hidden');
+            dropzone.classList.remove('border-dashed', 'border-gray-300');
+            dropzone.classList.add('border-none');
+            
+            // Show the analyze button
+            startScanBtn.classList.remove('hidden');
+            // Allow changing image by clicking preview
+            previewContainer.onclick = () => { imageInput.click(); };
+        };
+        reader.readAsDataURL(file);
+    }
+
+    startScanBtn.addEventListener('click', () => {
+        if (!selectedFile) return;
+        
+        // UI transitions for scanning state
+        startScanBtn.classList.add('hidden');
+        previewContainer.onclick = null; // Disable clicking during scan
+        reticleUI.classList.remove('hidden'); // Show target reticle & laser
+        scanningSheet.classList.remove('hidden'); // Show bottom sheet
+        scanHeader.classList.add('hidden'); // Hide top header to focus on scan
+        
+        // Prepare FormData
+        const formData = new FormData();
+        formData.append('images', selectedFile);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        // Simulate a slight delay for aesthetic value (the reticle animation needs time to show)
+        setTimeout(() => {
+            fetch('{% url "scan_food" %}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResults(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred during scanning.');
+                resetScan();
+            });
+        }, 1500); // 1.5s visual scanning time
+    });
+
+    function showResults(data) {
+        scanContainer.classList.add('hidden');
+        resultsContainer.classList.remove('hidden');
+        scanHeader.classList.remove('hidden');
+        scanHeader.querySelector('h1').innerHTML = 'Found it! <span class="text-brand">✨</span>';
+        
+        resultsGrid.innerHTML = '';
+        
+        // Card colors to alternate (matching the reference UI)
+        const themes = [
+            { bg: 'bg-[#2A9D8F]', text: 'text-white', badge: 'bg-[#21867a] text-white' }, // Teal
+            { bg: 'bg-[#F4A261]', text: 'text-white', badge: 'bg-[#e09153] text-white' }, // Orange/Yellow
+            { bg: 'bg-[#264653]', text: 'text-white', badge: 'bg-[#1d3540] text-white' }, // Dark Blue
+        ];
+
+        data.forEach((result, index) => {
+            const theme = themes[index % themes.length];
+            const confidenceStars = getStars(result.confidence);
+            
+            const card = document.createElement('div');
+            // Large rounded corners (`rounded-[2.5rem]`) to match reference UI
+            card.className = `bg-white rounded-[2.5rem] shadow-xl overflow-hidden flex flex-col`;
+            
+            card.innerHTML = `
+                <div class="${theme.bg} ${theme.text} p-6 relative overflow-hidden transform transition hover:shadow-2xl cursor-pointer" onclick="window.location.href='/food/${result.food_id}/'">
+                    <div class="flex justify-between items-start mb-6 z-10 relative">
+                        <div class="w-10 h-10 ${theme.badge} rounded-full flex items-center justify-center shadow-inner">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="z-10 relative text-center mb-8">
+                        <div class="w-32 h-32 mx-auto bg-white/20 rounded-full mb-4 shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex items-center justify-center p-2 backdrop-blur-sm border border-white/30">
+                            <img src="${previewImg.src}" class="w-full h-full object-cover rounded-full" alt="${result.food_name}">
+                        </div>
+                        <h3 class="text-3xl font-bold mb-1">${result.food_name}</h3>
+                        <div class="text-yellow-300 text-sm tracking-widest mb-2">${confidenceStars}</div>
+                    </div>
+
+                    <div class="z-10 relative flex justify-between items-center text-sm font-medium ${theme.badge} py-3 px-5 rounded-2xl w-max mx-auto space-x-6 backdrop-blur-md bg-opacity-30">
+                        <div class="flex items-center"><i class="far fa-clock bg-white/20 p-1.5 rounded-lg mr-2"></i>${result.prep_time || '5'} min</div>
+                        <div class="flex items-center"><i class="fas fa-utensils bg-white/20 p-1.5 rounded-lg mr-2"></i>1 Serve</div>
+                    </div>
+                    
+                    <!-- Decorative background elements -->
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-black opacity-10 rounded-full blur-2xl pointer-events-none"></div>
+                </div>
+                
+                <div class="p-6 bg-white text-gray-800 flex-grow">
+                    <h4 class="font-bold text-lg mb-3">Preparation</h4>
+                    <ul class="text-sm space-y-3">
+                        ${result.preparation_steps && result.preparation_steps.length > 0 
+                            ? result.preparation_steps.map((step, idx) => `
+                                <li class="flex items-start">
+                                    <div class="bg-yellow-100 text-brand p-1.5 rounded-lg mr-3 mt-0.5">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                    <span class="text-gray-600">${step}</span>
+                                </li>
+                            `).join('')
+                            : `<li class="flex items-start">
+                                    <div class="bg-yellow-100 text-brand p-1.5 rounded-lg mr-3 mt-0.5">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                    <span class="text-gray-600">Preparation instructions for this food are currently unavailable. Please check the full details page.</span>
+                                </li>`
+                        }
+                    </ul>
+                    
+                    <h4 class="font-bold text-lg mb-3 mt-6">Ingredients</h4>
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        ${result.ingredients && result.ingredients.length > 0 
+                            ? result.ingredients.map(ing => `
+                                <div class="bg-gray-50 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-xl text-sm font-medium flex items-center shadow-sm">
+                                    <i class="fas fa-leaf text-green-500 mr-2 opacity-70"></i>${ing}
+                                </div>
+                            `).join('')
+                            : `<span class="text-sm text-gray-500 italic">No specific ingredients listed.</span>`
+                        }
+                    </div>
+
+                    <a href="/food/${result.food_id}/" class="mt-6 w-full text-center block bg-gray-50 text-gray-800 font-bold py-3 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors">
+                        View Full Recipe
+                    </a>
+                </div>
+            `;
+            
+            resultsGrid.appendChild(card);
+        });
+    }
+
+    function getStars(confidence) {
+        // Simple star generator based on confidence score (0-1)
+        const count = Math.round(confidence * 5);
+        let starsHtml = '';
+        for(let i=0; i<5; i++) {
+            starsHtml += i < count ? '<i class="fas fa-star"></i>' : '<i class="far fa-star opacity-50"></i>';
+        }
+        return starsHtml;
+    }
+
+    function resetScan() {
+        selectedFile = null;
+        imageInput.value = '';
+        
+        // Reset UI
+        resultsContainer.classList.add('hidden');
+        scanContainer.classList.remove('hidden');
+        
+        previewContainer.classList.add('hidden');
+        uploadPrompt.classList.remove('hidden');
+        dropzone.classList.remove('border-none');
+        dropzone.classList.add('border-dashed', 'border-gray-300');
+        
+        reticleUI.classList.add('hidden');
+        scanningSheet.classList.add('hidden');
+        startScanBtn.classList.add('hidden');
+        
+        scanHeader.querySelector('h1').innerHTML = 'Scan Food <span class="text-brand">📸</span>';
+        scanHeader.classList.remove('hidden');
+    }
+</script>
+{% endblock %}

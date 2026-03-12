@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scan History - Beyond The Bite{% endblock %}
+
+{% block content %}
+<div class="min-h-screen food-bg-pattern py-12">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="text-center mb-12">
+            <h1 class="font-accent text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00f2fe] to-[#4facfe] mb-4">
+                <i class="fas fa-history mr-2 text-[#00f2fe]"></i>Your Scan History
+            </h1>
+        </div>
+
+        {% if scans %}
+            <div class="space-y-6">
+                {% for scan in scans %}
+                    <div class="card-3d figma-card p-8 mb-6">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between">
+                            <div class="flex items-center space-x-6 mb-4 md:mb-0">
+                                <img src="{{ scan.image.url }}" alt="Scanned food" class="w-24 h-24 object-cover rounded-2xl shadow-md border border-gray-700">
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white mb-1">{{ scan.food_detected.name }}</h3>
+                                    <p class="text-gray-400 text-sm font-light mb-3">{{ scan.scanned_at|date:"F d, Y \a\t H:i" }}</p>
+                                    <span class="inline-block bg-gradient-to-r from-[#0ba360] to-[#3cba92] text-white font-bold px-3 py-1 rounded-full text-xs shadow-sm">
+                                        {{ scan.confidence|floatformat:1 }}% confidence
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-3 mt-4 md:mt-0">
+                                <a href="/food/{{ scan.food_detected.id }}/" class="btn-3d px-6 py-2 rounded-full text-sm">
+                                    <i class="fas fa-eye mr-2"></i>Details
+                                </a>
+                                <button class="bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-6 py-2 rounded-full transition-colors duration-300 font-semibold text-sm border border-red-500/50 shadow-sm">
+                                    <i class="fas fa-trash mr-2"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <span class="font-bold text-[#00f2fe] text-lg block mb-1">{{ scan.food_detected.nutrition.calories }} kcal</span>
+                                <p class="text-gray-400 font-medium">Calories</p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <span class="font-bold text-[#43e97b] text-lg block mb-1">{{ scan.food_detected.nutrition.protein }}g</span>
+                                <p class="text-gray-400 font-medium">Protein</p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <span class="font-bold text-[#f6d365] text-lg block mb-1">{{ scan.food_detected.nutrition.carbs }}g</span>
+                                <p class="text-gray-400 font-medium">Carbs</p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <span class="font-bold text-[#fa709a] text-lg block mb-1">{{ scan.food_detected.nutrition.fat }}g</span>
+                                <p class="text-gray-400 font-medium">Fat</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-8 flex justify-center">
+                <nav class="flex items-center space-x-2">
+                    {% if scans.has_previous %}
+                        <a href="?page={{ scans.previous_page_number }}" class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Previous</a>
+                    {% endif %}
+                    <span class="px-3 py-2 bg-gray-200 text-gray-700 rounded-md">Page {{ scans.number }} of {{ scans.paginator.num_pages }}</span>
+                    {% if scans.has_next %}
+                        <a href="?page={{ scans.next_page_number }}" class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Next</a>
+                    {% endif %}
+                </nav>
+            </div>
+        {% else %}
+            <div class="text-center py-20 figma-card card-3d">
+                <div class="bg-gradient-to-br from-gray-700 to-gray-800 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-gray-600">
+                    <i class="fas fa-search text-4xl text-gray-500 drop-shadow-sm"></i>
+                </div>
+                <h3 class="text-3xl font-bold text-white mb-4">No scans yet</h3>
+                <p class="text-gray-400 mb-10 font-light text-xl max-w-md mx-auto">Start scanning some delicious food to see your history here!</p>
+                <a href="{% url 'scan' %}" class="btn-3d px-10 py-5 text-xl font-bold">
+                    <i class="fas fa-camera mr-2"></i>Start Scanning
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

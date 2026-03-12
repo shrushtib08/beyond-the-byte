@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Assistant - Beyond The Bite{% endblock %}
+
+{% block content %}
+<div class="min-h-screen food-bg-pattern py-12">
+    <div class="max-w-4xl mx-auto px-4">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold gradient-text mb-4 animate-fade-in">
+                <i class="fas fa-robot text-indigo-600 mr-2"></i>AI Food Assistant
+            </h1>
+            <p class="text-xl text-gray-600 dark:text-gray-300 animate-slide-up">Ask me anything about food, nutrition, recipes, and healthy eating!</p>
+        </div>
+
+        <div class="card-3d figma-card p-10 rounded-[2rem] shadow-2xl max-w-4xl mx-auto border-none">
+            <div class="space-y-6">
+                <!-- Chat Interface -->
+                <div id="chat-container" class="space-y-4 max-h-96 overflow-y-auto">
+                    {% if question %}
+                        <!-- User Question -->
+                        <div class="flex justify-end">
+                            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-2xl max-w-xs lg:max-w-md shadow-lg">
+                                <p class="text-sm">{{ question }}</p>
+                            </div>
+                        </div>
+
+                        <!-- AI Response -->
+                        <div class="flex justify-start">
+                            <div class="bg-gray-800/80 backdrop-blur-md p-5 rounded-3xl max-w-xs lg:max-w-md shadow-lg border border-gray-700">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-robot text-[#00f2fe] mr-2"></i>
+                                    <span class="text-sm font-semibold text-gray-300">Beyond The Bite Assistant</span>
+                                </div>
+                                <p class="text-sm text-gray-200">{{ response }}</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Welcome Message -->
+                        <div class="text-center py-10">
+                            <div class="bg-white/5 border border-white/10 backdrop-blur-sm p-8 rounded-[2rem]">
+                                <i class="fas fa-comments text-5xl text-[#00f2fe] mb-6"></i>
+                                <h3 class="text-2xl font-semibold text-white mb-3">Hello! I'm your Beyond The Bite Assistant</h3>
+                                <p class="text-gray-400">Ask me questions about nutrition, recipes, healthy eating, vegan alternatives, and more!</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Question Form -->
+                <form id="ask-form" method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <div class="flex space-x-4">
+                        <input type="text" name="question" id="question-input" placeholder="Ask me about food, nutrition, recipes..." required
+                               class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                        <input type="hidden" name="food_context" value="{{ food_context }}">
+                        <button type="submit" class="btn-3d bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            <i class="fas fa-paper-plane mr-2"></i>Ask
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Quick Questions -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Quick Questions:</h3>
+                    <div class="grid md:grid-cols-2 gap-3">
+                        <button onclick="askQuestion('Is this food healthy?')" class="text-left p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-heart text-red-500 mr-2"></i>Is this food healthy?
+                        </button>
+                        <button onclick="askQuestion('How can I make this vegan?')" class="text-left p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-leaf text-green-500 mr-2"></i>How can I make this vegan?
+                        </button>
+                        <button onclick="askQuestion('What are good alternatives?')" class="text-left p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-exchange-alt text-blue-500 mr-2"></i>What are good alternatives?
+                        </button>
+                        <button onclick="askQuestion('Tell me about the nutrition')" class="text-left p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-chart-pie text-purple-500 mr-2"></i>Tell me about the nutrition
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips Section -->
+        <div class="mt-12 card-3d figma-card p-6 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700">
+            <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+                <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>Tips for Better Questions
+            </h3>
+            <div class="grid md:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
+                <div>
+                    <h4 class="font-semibold mb-2">Nutrition Questions:</h4>
+                    <ul class="space-y-1">
+                        <li>• "How many calories in this food?"</li>
+                        <li>• "Is this high in protein?"</li>
+                        <li>• "What vitamins does this provide?"</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2">Recipe Questions:</h4>
+                    <ul class="space-y-1">
+                        <li>• "How do I cook this?"</li>
+                        <li>• "What ingredients do I need?"</li>
+                        <li>• "How long does it take to prepare?"</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function askQuestion(question) {
+    const inputField = document.getElementById('question-input');
+    if (inputField) {
+        inputField.value = question;
+        const form = document.getElementById('ask-form');
+        if (form) {
+            // trigger submit event rather than just form.submit() to allow interception
+            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chat-container');
+    const askForm = document.getElementById('ask-form');
+    const questionInput = document.getElementById('question-input');
+    const submitBtn = askForm ? askForm.querySelector('button[type="submit"]') : null;
+
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    if (askForm) {
+        askForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            // Optional: Disable input while waiting
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Thinking...';
+            questionInput.readOnly = true;
+
+            const formData = new FormData(askForm);
+
+            fetch(askForm.action || window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Remove welcome message if it exists
+                const welcomeMsg = chatContainer.querySelector('.text-center.py-10');
+                if (welcomeMsg) welcomeMsg.remove();
+
+                // Append User Question
+                const userDiv = document.createElement('div');
+                userDiv.className = 'flex justify-end mt-4 mb-4 animate-fade-in';
+                userDiv.innerHTML = `
+                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-2xl max-w-xs lg:max-w-md shadow-lg">
+                        <p class="text-sm">${escapeHtml(data.question)}</p>
+                    </div>
+                `;
+                chatContainer.appendChild(userDiv);
+
+                // Append AI Response
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'flex justify-start mb-4 animate-slide-up';
+                aiDiv.innerHTML = `
+                    <div class="bg-gray-800/80 backdrop-blur-md p-5 rounded-3xl max-w-xs lg:max-w-md shadow-lg border border-gray-700">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-robot text-[#00f2fe] mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-300">Beyond The Bite Assistant</span>
+                        </div>
+                        <p class="text-sm text-gray-200">${escapeHtml(data.response).replace(/\\n/g, '<br>')}</p>
+                    </div>
+                `;
+                chatContainer.appendChild(aiDiv);
+
+                // Clear input & scroll to bottom
+                questionInput.value = '';
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Something went wrong. Please try again.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+                questionInput.readOnly = false;
+                questionInput.focus();
+            });
+        });
+    }
+
+    function escapeHtml(unsafe) {
+        return (unsafe || '').toString()
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+});
+</script>
+{% endblock %}

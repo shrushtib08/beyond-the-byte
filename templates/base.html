@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Beyond The Bite{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playball&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <link rel="stylesheet" href="{% static 'css/enhanced.css' %}">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0B0F19; /* Deep premium dark background */
+        }
+        .font-accent {
+            font-family: 'Playball', cursive;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+        // Theme initialization
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body class="bg-[#0B0F19] text-gray-100 min-h-screen transition-colors duration-300">
+    <nav class="relative z-50 bg-[#141B2D]/90 backdrop-blur-md shadow-lg border-b border-[#2d3748]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+            <!-- Logo -->
+            <div class="flex-shrink-0 flex items-center transform hover:scale-105 transition-transform duration-300">
+                <a href="{% url 'home' %}" class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-br from-[#f6d365] to-[#fda085] p-2 rounded-xl shadow-lg">
+                        <i class="fas fa-utensils text-white text-xl"></i>
+                    </div>
+                    <span class="font-accent text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#fa709a] to-[#fee140]">
+                        Beyond The Bite
+                    </span>
+                </a>
+            </div>
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-moon text-gray-600 dark:text-gray-300" id="theme-icon"></i>
+                    </button>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}" class="text-gray-300 hover:text-[#00f2fe] px-3 py-2 rounded-md font-medium transition-colors">Dashboard</a>
+                        <a href="{% url 'favorites' %}" class="text-gray-300 hover:text-[#00f2fe] px-3 py-2 rounded-md font-medium transition-colors">Favorites</a>
+                        <a href="{% url 'ai_assistant' %}" class="text-gray-300 hover:text-[#00f2fe] px-3 py-2 rounded-md font-medium transition-colors">AI Assistant</a>
+                        <a href="{% url 'scan' %}" class="btn-3d shadow-md px-5 py-2 text-sm ml-2">Scan Food</a>
+                        <a href="{% url 'logout' %}" class="text-gray-300 hover:text-[#fa709a] px-3 py-2 rounded-md font-medium transition-colors ml-2">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="text-gray-300 hover:text-[#00f2fe] px-3 py-2 rounded-md font-medium transition-colors">Login</a>
+                        <a href="{% url 'register' %}" class="btn-3d shadow-md px-5 py-2 text-sm ml-2">Create Account</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="bg-{{ message.tags }}-200 border border-{{ message.tags }}-400 text-{{ message.tags }}-700 px-4 py-3 rounded relative" role="alert">
+                        <span class="block sm:inline">{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-[#0B0F19] border-t border-[#2d3748] text-gray-400 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p>&copy; 2026 Beyond The Bite. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+
+            if (themeToggleBtn && themeIcon) {
+                // Set initial icon
+                if (document.documentElement.classList.contains('dark')) {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                } else {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                }
+
+                themeToggleBtn.addEventListener('click', () => {
+                    if (document.documentElement.classList.contains('dark')) {
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('theme', 'light');
+                        themeIcon.classList.remove('fa-sun');
+                        themeIcon.classList.add('fa-moon');
+                    } else {
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('theme', 'dark');
+                        themeIcon.classList.remove('fa-moon');
+                        themeIcon.classList.add('fa-sun');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
